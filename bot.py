@@ -48,88 +48,106 @@ async def uzb(message: types.Message):
         global phone_number, chat_id
         phone_number = "+998933333349"  #message.contact.phone_number
         chat_id = '901569590'    # message.from_user.id
-        payload = {
-            "type": "phone",
-            "chat_id": chat_id,
-            "phone_number": phone_number
+        params = {
+            'type': 'phone',
+            'chat_id': 901569590,
+            'phone_number': '+998933411945'
         }
-        payload_json = json.dumps(payload)
-        print(payload_json)
+
+        # Headers to send with the request
+        headers = {
+            'Authorization': 'Basic SElMT0w6MHV0MGZiMHVuRA==',
+            'User-Agent': 'PostmanRuntime/7.35.0',
+            'Accept': '*/*',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Connection': 'keep-alive'
+        }
+
         try:
-            response = requests.get(api_url, data=payload_json)
-            print(response.status_code)
-            print(response.content)
+            # Perform the GET request with the specified headers and Basic Authentication
+            response = requests.get(api_url, params=params, headers=headers)
 
-            if response.status_code == 200:
-                print("Data sent successfully to the API")
-                await message.answer("Data sent successfully")
+            # Check if the request was successful
+            if response.ok:
+                # Attempt to print the JSON if the content type is correct
+                if 'application/json' in response.headers.get('Content-Type', ''):
+                    print(response.json())
+                    result = response.text
+                else:
+                    result = f"Response is not in JSON format: {response.text}"
             else:
-                print("Failed to send data to the API")
-                await message.answer("Failed to send data")
+                # Handle request error
+                result = f"Request failed with status code {response.status_code}: {response.reason}"
+            await message.answer(f"{response.json()}", reply_markup=user_uz)
 
-            await message.answer(f"Mijoz : {message.contact.full_name}\nTelefon: {message.contact.phone_number}",
-                                 reply_markup=user_uz)
         except requests.exceptions.RequestException as e:
-            print("Request Exception:", e)
-            print("Failed to connect to the API. Check the URL or network connection.")
+            # A serious problem happened, like an SSLError or InvalidURL
+            result = f"Request failed: {e}"
+
+            await message.answer(f"{response}")
 
 
         @dp.message_handler(text = 'Qarzdorlikni tekshirish ＄')
         async def uzb_baz(message: types.Message):
             chat_id = message.from_user.id
-            payload = {
-                "type": "contracts",
-                "chat_id": chat_id
+            params = {
+                'type': 'contracts',
+                'chat_id': 901569590
             }
-            payload_json = json.dumps(payload)
+            headers = {
+                'Authorization': 'Basic SElMT0w6MHV0MGZiMHVuRA==',
+                'User-Agent': 'PostmanRuntime/7.35.0',
+                'Accept': '*/*',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Connection': 'keep-alive'
+            }
             try:
-                response = requests.get(api_url, data=payload_json, auth=(login, password),
-                                        headers={'Content-Type': 'application/json'})
-                print(response.status_code)
-                print("pppppp", response.content)
-
-                if response.status_code == 200:
-                    print("Data sent successfully to the API")
-                    await message.answer("Data sent successfully")
+                response = requests.get(api_url, params=params, headers=headers)
+                if response.ok:
+                    if 'application/json' in response.headers.get('Content-Type', ''):
+                        print(response.json())
+                        result = response.text
+                    else:
+                        result = f"Response is not in JSON format: {response.text}"
                 else:
-                    print("Failed to send data to the API")
-                    await message.answer("Failed to send data")
+                    result = f"Request failed with status code {response.status_code}: {response.reason}"
+                await message.answer(f"{response.json()}")
 
-                await message.answer(f"Mijoz : {message.contact}",
-                                     reply_markup=user_uz)
             except requests.exceptions.RequestException as e:
-                print("Request Exception:", e)
-                print("Failed to connect to the API. Check the URL or network connection.")
+                result = f"Request failed: {e}"
+                await message.answer(f"{response}")
             await message.answer(f"Quyidagi bo'limlardan birini tanlang: ",reply_markup=c_button_uz)
 
             @dp.message_handler(text = 'AllSumm')
             async def all(message: types.Message):
                 chat_id = message.from_user.id
-                payload = {
-                    "type": "debt",
-                    "chat_id": chat_id
+                params = {
+                    'type': 'debt',
+                    'chat_id': 901569590
                 }
-                payload_json = json.dumps(payload)
+                headers = {
+                    'Authorization': 'Basic SElMT0w6MHV0MGZiMHVuRA==',
+                    'User-Agent': 'PostmanRuntime/7.35.0',
+                    'Accept': '*/*',
+                    'Accept-Encoding': 'gzip, deflate, br',
+                    'Connection': 'keep-alive'
+                }
                 try:
-                    response = requests.get(api_url, data=payload_json, auth=(login, password),
-                                            headers={'Content-Type': 'application/json'})
-                    print(response.status_code)
-                    print(response.content)
-
-                    if response.status_code == 200:
-                        print("Data sent successfully to the API")
-                        await message.answer("Data sent successfully")
+                    response = requests.get(api_url, params=params, headers=headers)
+                    if response.ok:
+                        if 'application/json' in response.headers.get('Content-Type', ''):
+                            print(response.json())
+                            result = response.text
+                        else:
+                            result = f"Response is not in JSON format: {response.text}"
                     else:
-                        print("Failed to send data to the API")
-                        await message.answer("Failed to send data")
+                        result = f"Request failed with status code {response.status_code}: {response.reason}"
+                    await message.answer(f"{response.json()}")
 
-                    await message.answer(
-                        f"Mijoz : {message.contact}\nTelefon: {message.from_user.username}",
-                        reply_markup=user_uz)
                 except requests.exceptions.RequestException as e:
-                    print("Request Exception:", e)
-                    print("Failed to connect to the API. Check the URL or network connection.")
-                await message.reply("Sizning qarzdorligingiz")
+                    result = f"Request failed: {e}"
+                    await message.answer(f"{response}")
+                await message.reply(f"Sizning qarzdorligingiz{response.json()}")
 
         @dp.message_handler(text = 'Biz bilan bog’lanish 📞')
         async def admin(message: types.Message):
