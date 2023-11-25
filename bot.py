@@ -56,7 +56,7 @@ async def uzb(message: types.Message):
         payload_json = json.dumps(payload)
         print(payload_json)
         try:
-            response = requests.get(api_url, data=payload_json, auth=(login, password), headers={'Authorization':'Basic SElMT0w6MHV0MGZiMHVuRA==', 'Postman-Token':'<calculated when request is sent>','Host':'<calculated when request is sent>','User-Agent': 'PostmanRuntime/7.35.0', 'Accept':'*/*', 'Accept-Encoding':'gzip, deflate, br', 'Connection':'keep-alive'})
+            response = requests.get(api_url, data=payload_json)
             print(response.status_code)
             print(response.content)
 
