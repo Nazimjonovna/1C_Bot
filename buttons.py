@@ -58,11 +58,11 @@ user_eng = ReplyKeyboardMarkup(
 c_button_uz = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton('AllSumm'),
-         KeyboardButton('Currency'),
-         KeyboardButton('Contract'),
-         KeyboardButton('ContractSumm'),
-         KeyboardButton('ContractCurrency'),
-         KeyboardButton('ContractEkvivalent'),
+        #  KeyboardButton('Currency'),
+        #  KeyboardButton('Contract'),
+        #  KeyboardButton('ContractSumm'),
+        #  KeyboardButton('ContractCurrency'),
+        #  KeyboardButton('ContractEkvivalent'),
          KeyboardButton('Bosh menyuga qaytish 🔙')]
     ],
     resize_keyboard=True,
@@ -71,11 +71,11 @@ c_button_uz = ReplyKeyboardMarkup(
 c_button_ru = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton('AllSumm'),
-         KeyboardButton('Currency'),
-         KeyboardButton('Contract'),
-         KeyboardButton('ContractSumm'),
-         KeyboardButton('ContractCurrency'),
-         KeyboardButton('ContractEkvivalent'),
+        #  KeyboardButton('Currency'),
+        #  KeyboardButton('Contract'),
+        #  KeyboardButton('ContractSumm'),
+        #  KeyboardButton('ContractCurrency'),
+        #  KeyboardButton('ContractEkvivalent'),
          KeyboardButton('Вернуться в главное меню 🔙')]
     ],
     resize_keyboard=True,
@@ -84,11 +84,11 @@ c_button_ru = ReplyKeyboardMarkup(
 c_button_eng = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton('AllSumm'),
-         KeyboardButton('Currency'),
-         KeyboardButton('Contract'),
-         KeyboardButton('ContractSumm'),
-         KeyboardButton('ContractCurrency'),
-         KeyboardButton('ContractEkvivalent'),
+        #  KeyboardButton('Currency'),
+        #  KeyboardButton('Contract'),
+        #  KeyboardButton('ContractSumm'),
+        #  KeyboardButton('ContractCurrency'),
+        #  KeyboardButton('ContractEkvivalent'),
          KeyboardButton('Return to main menu 🔙')]
     ],
     resize_keyboard=True,

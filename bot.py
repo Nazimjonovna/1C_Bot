@@ -71,20 +71,20 @@ async def uzb(message: types.Message):
             if response.ok:
                 # Attempt to print the JSON if the content type is correct
                 if 'application/json' in response.headers.get('Content-Type', ''):
-                    print(response.json())
+                    data = response.json()
                     result = response.text
                 else:
                     result = f"Response is not in JSON format: {response.text}"
             else:
                 # Handle request error
                 result = f"Request failed with status code {response.status_code}: {response.reason}"
-            await message.answer(f"{response.json()}", reply_markup=user_uz)
+            await message.answer(f"{data.get('UZ')}", reply_markup=user_uz)
 
         except requests.exceptions.RequestException as e:
             # A serious problem happened, like an SSLError or InvalidURL
             result = f"Request failed: {e}"
 
-            await message.answer(f"{response}")
+            await message.answer(f"{data.get('UZ')}")
 
 
         @dp.message_handler(text = 'Qarzdorlikni tekshirish ＄')
@@ -105,17 +105,23 @@ async def uzb(message: types.Message):
                 response = requests.get(api_url, params=params, headers=headers)
                 if response.ok:
                     if 'application/json' in response.headers.get('Content-Type', ''):
-                        print(response.json())
+                        data = response.json()
+                        con = {}
+                        for i in data.get('contracts'):
+                            for k, v in i.items():
+                                con[k] = v
+                                await message.answer(f"{k}---{v}".format())
                         result = response.text
                     else:
                         result = f"Response is not in JSON format: {response.text}"
+                        await message.answer(f"Sizdagi xatolik {result}")
                 else:
                     result = f"Request failed with status code {response.status_code}: {response.reason}"
-                await message.answer(f"{response.json()}")
+                    await message.answer(f"Sizdagi xatolik {result}")
 
             except requests.exceptions.RequestException as e:
                 result = f"Request failed: {e}"
-                await message.answer(f"{response}")
+                await message.answer(f"Sizdagi xatolik {result}")
             await message.answer(f"Quyidagi bo'limlardan birini tanlang: ",reply_markup=c_button_uz)
 
             @dp.message_handler(text = 'AllSumm')
@@ -136,18 +142,28 @@ async def uzb(message: types.Message):
                     response = requests.get(api_url, params=params, headers=headers)
                     if response.ok:
                         if 'application/json' in response.headers.get('Content-Type', ''):
-                            print(response.json())
+                            data = response.json()
+                            print("Mana", data)
+                            for key, value in data.items():
+                                if data['allsumm'] == None:
+                                    await message.answer("Sizda hozircha mablag' yo ")
+                                else:
+                                    await message.answer(f"{data['allsumm']}----{data['contracts']}")
                             result = response.text
                         else:
                             result = f"Response is not in JSON format: {response.text}"
+                            await message.answer(f"Sizdagi xatolik {result}")
                     else:
                         result = f"Request failed with status code {response.status_code}: {response.reason}"
-                    await message.answer(f"{response.json()}")
+                        await message.answer(f"Sizdagi xatolik {result}")
 
                 except requests.exceptions.RequestException as e:
                     result = f"Request failed: {e}"
-                    await message.answer(f"{response}")
-                await message.reply(f"Sizning qarzdorligingiz{response.json()}")
+                    await message.answer(f"Sizdagi xatolik {result}")
+
+            @dp.message_handler(text = 'Bosh menyuga qaytish 🔙')
+            async def back(message: types.Message):
+                await message.answer(text = "Orqaga",reply_markup=user_uz)
 
         @dp.message_handler(text = 'Biz bilan bog’lanish 📞')
         async def admin(message: types.Message):
@@ -180,37 +196,37 @@ async def uzb(message: types.Message):
             else:
                 await message.answer("Noto'g'ri formatda sanani kiriting (hh:mm): ")
 
-            @dp.message_handler(state=TimeInput.end_time)
-            async def akt(message: types.Message):
-                global start, finish
-                chat_id = message.from_user.id
-                payload = {
-                    "type": "reconciliation_act",
-                    "chat_id": chat_id,
-                    "start":start,
-                    "finish":finish
-                }
-                payload_json = json.dumps(payload)
-                try:
-                    response = requests.get(api_url, data=payload_json, auth=(login, password),
-                                            headers={'Content-Type': 'application/json'})
-                    print(response.status_code)
-                    print(response.content)
+        @dp.message_handler(state=TimeInput.end_time)
+        async def akt(message: types.Message):
+            global start, finish
+            chat_id = message.from_user.id
+            payload = {
+                "type": "reconciliation_act",
+                "chat_id": chat_id,
+                "start":start,
+                "finish":finish
+            }
+            payload_json = json.dumps(payload)
+            try:
+                response = requests.get(api_url, data=payload_json, auth=(login, password),
+                                        headers={'Content-Type': 'application/json'})
+                print(response.status_code)
+                print(response.content)
 
-                    if response.status_code == 200:
-                        print("Data sent successfully to the API")
-                        await message.answer("Data sent successfully")
-                    else:
-                        print("Failed to send data to the API")
-                        await message.answer("Failed to send data")
+                if response.status_code == 200:
+                    print("Data sent successfully to the API")
+                    await message.answer("Data sent successfully")
+                else:
+                    print("Failed to send data to the API")
+                    await message.answer("Failed to send data")
 
-                    await message.answer(
-                        f"Mijoz : {message.contact.full_name}\nTelefon: {message.contact.phone_number}",
-                        reply_markup=user_uz)
-                except requests.exceptions.RequestException as e:
-                    print("Request Exception:", e)
-                    print("Failed to connect to the API. Check the URL or network connection.")
-                await message.answer("Qaysi shartnoma bo’yicha akt sverka olmoqchisiz", reply_markup=akt_button)
+                await message.answer(
+                    f"Mijoz : {message.contact.full_name}\nTelefon: {message.contact.phone_number}",
+                    reply_markup=user_uz)
+            except requests.exceptions.RequestException as e:
+                print("Request Exception:", e)
+                print("Failed to connect to the API. Check the URL or network connection.")
+            await message.answer("Qaysi shartnoma bo’yicha akt sverka olmoqchisiz", reply_markup=akt_button)
 
 
 
