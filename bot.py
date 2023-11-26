@@ -9,6 +9,10 @@ import re
 import asyncio
 import requests
 import json
+import os
+from dotenv import load_dotenv
+load_dotenv()
+telegram_bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
 
 # Your API endpoint URL
 api_url = 'http://5.182.26.180:55565/telegram/hs/hl/gd'
@@ -16,7 +20,7 @@ login = 'HILOL'
 password = '0ut0fb0unD'
 
 # Token of tg_Bot
-API_TOKEN = '6619844226:AAGpUYECES7ReYNnSVZdWMYV8yhhtdcGEfk'
+API_TOKEN = telegram_bot_token
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
