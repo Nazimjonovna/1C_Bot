@@ -14,7 +14,6 @@ from datetime import datetime
 
 # Your API endpoint URL
 # url va token
-
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 storage = MemoryStorage()
