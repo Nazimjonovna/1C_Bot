@@ -6,17 +6,14 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 import re
+import io
 import asyncio
 import requests
 import json
+from datetime import datetime
 
 # Your API endpoint URL
-api_url = 'http://5.182.26.180:55565/telegram/hs/hl/gd'
-login = 'HILOL'
-password = '0ut0fb0unD'
-
-# Token of tg_Bot
-API_TOKEN = '6619844226:AAGpUYECES7ReYNnSVZdWMYV8yhhtdcGEfk'
+# url va token
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -53,8 +50,6 @@ async def uzb(message: types.Message):
             'chat_id': 901569590,
             'phone_number': '+998933411945'
         }
-
-        # Headers to send with the request
         headers = {
             'Authorization': 'Basic SElMT0w6MHV0MGZiMHVuRA==',
             'User-Agent': 'PostmanRuntime/7.35.0',
@@ -64,26 +59,20 @@ async def uzb(message: types.Message):
         }
 
         try:
-            # Perform the GET request with the specified headers and Basic Authentication
             response = requests.get(api_url, params=params, headers=headers)
-
-            # Check if the request was successful
             if response.ok:
-                # Attempt to print the JSON if the content type is correct
                 if 'application/json' in response.headers.get('Content-Type', ''):
                     data = response.json()
+                    print(data)
                     result = response.text
                 else:
                     result = f"Response is not in JSON format: {response.text}"
             else:
-                # Handle request error
                 result = f"Request failed with status code {response.status_code}: {response.reason}"
             await message.answer(f"{data.get('UZ')}", reply_markup=user_uz)
 
         except requests.exceptions.RequestException as e:
-            # A serious problem happened, like an SSLError or InvalidURL
             result = f"Request failed: {e}"
-
             await message.answer(f"{data.get('UZ')}")
 
 
@@ -106,11 +95,16 @@ async def uzb(message: types.Message):
                 if response.ok:
                     if 'application/json' in response.headers.get('Content-Type', ''):
                         data = response.json()
-                        con = {}
-                        for i in data.get('contracts'):
-                            for k, v in i.items():
-                                con[k] = v
-                                await message.answer(f"{k}---{v}".format())
+                        for key, value in data.items():
+                            if data['allsumm'] == None:
+                                await message.answer("Sizda hozircha mablag' yo ")
+                            else:
+                                await message.answer(f"{data['allsumm']}----{data['contracts']}")
+                        # con = {}
+                        # for i in data.get('contracts'):
+                        #     for k, v in i.items():
+                        #         con[k] = v
+                        #         await message.answer(f"{k}---{v}".format())
                         result = response.text
                     else:
                         result = f"Response is not in JSON format: {response.text}"
@@ -177,9 +171,11 @@ async def uzb(message: types.Message):
 
         @dp.message_handler(state=TimeInput.start_time)
         async def start_time_handler(message: types.Message, state: FSMContext):
-            if re.match(r'\d{2}:\d{2}', message.text):
+            if re.match(r'\d{4}-\d{2}-\d{2}', message.text):
                 async with state.proxy() as data:
                     data['start'] = message.text
+                    global start_t
+                    start_t = message.text
                     await TimeInput.next()
                     await message.answer("Tugash sanani kiriting: ")
             else:
@@ -188,45 +184,75 @@ async def uzb(message: types.Message):
 
         @dp.message_handler(state=TimeInput.end_time)
         async def end_time_handler(message: types.Message, state: FSMContext):
-            if re.match(r'\d{2}:\d{2}', message.text):
+            if re.match(r'\d{4}-\d{2}-\d{2}', message.text):
                 async with state.proxy() as data:
                     data['finish'] = message.text
-                    await message.answer(f"Start time: {data['start']}, Finish time: {data['finish']}")
-                    await state.finish()
+                    global start_t
+                    print(type(message.text))
+                    start = start_t + 'T00:00:00'
+                    finish = message.text + 'T00:00:00'
+                    print(finish)
+                    chat_id = message.from_user.id
+                    params = {
+                    "type": "reconciliation_act",
+                        "chat_id": 901569590,
+                        "start":start,
+                        "finish":finish
+                }
+                headers = {
+                    'Authorization': 'Basic SElMT0w6MHV0MGZiMHVuRA==',
+                    'User-Agent': 'PostmanRuntime/7.35.0',
+                    'Accept': '*/*',
+                    'Accept-Encoding': 'gzip, deflate, br',
+                    'Connection': 'keep-alive'
+                }
+                response = requests.get(api_url, params=params, headers=headers)
+                print(response.content)
+                print(params)
+                try:
+                    if response.ok:
+                        content_type = response.headers.get('Content-Type', '')
+                        if 'application/json' in content_type:
+                            data = response.json()
+                            # Process JSON data here
+                            if data.get('allsumm') is None:
+                                await message.answer("Sizda hozircha mablag' yo ")
+                            else:
+                                await message.answer(f"{data['allsumm']}----{data['contracts']}")
+                            await message.answer(f"Start time: {data['start']}, Finish time: {data['finish']}")
+                        elif 'application/octet-stream' in content_type or 'application/vnd.ms-excel' in content_type:
+                            # If the response is a file or binary data (including Excel files)
+                            bio = io.BytesIO(response.content)
+                            bio.name = 'received_file.xlsx'  # You can specify the file name based on your needs
+                            await message.answer_document(document=bio)
+                        else:
+                            result = f"Unknown Content-Type: {content_type}"
+                            print('error0', result)
+                            await message.answer(f"Sizdagi xatolik {result}")
+                    else:
+                        result = f"Request failed with status code {response.status_code}: {response.reason}"
+                        print("error", result)
+                        await message.answer(f"Sizdagi xatolik {result}")
+
+                except requests.exceptions.RequestException as e:
+                    result = f"Request failed: {e}"
+                    await message.answer(f"Sizdagi xatolik exepdan {result}")
+                await message.answer(f"Start time: {data['start']}, Finish time: {data['finish']}")
+                await state.finish()
+                    
             else:
                 await message.answer("Noto'g'ri formatda sanani kiriting (hh:mm): ")
 
-        @dp.message_handler(state=TimeInput.end_time)
-        async def akt(message: types.Message):
-            global start, finish
-            chat_id = message.from_user.id
-            payload = {
-                "type": "reconciliation_act",
-                "chat_id": chat_id,
-                "start":start,
-                "finish":finish
-            }
-            payload_json = json.dumps(payload)
-            try:
-                response = requests.get(api_url, data=payload_json, auth=(login, password),
-                                        headers={'Content-Type': 'application/json'})
-                print(response.status_code)
-                print(response.content)
 
-                if response.status_code == 200:
-                    print("Data sent successfully to the API")
-                    await message.answer("Data sent successfully")
-                else:
-                    print("Failed to send data to the API")
-                    await message.answer("Failed to send data")
 
-                await message.answer(
-                    f"Mijoz : {message.contact.full_name}\nTelefon: {message.contact.phone_number}",
-                    reply_markup=user_uz)
-            except requests.exceptions.RequestException as e:
-                print("Request Exception:", e)
-                print("Failed to connect to the API. Check the URL or network connection.")
-            await message.answer("Qaysi shartnoma bo’yicha akt sverka olmoqchisiz", reply_markup=akt_button)
+
+
+
+
+
+
+
+
 
 
 
@@ -247,35 +273,209 @@ async def ru(message: types.Message):
         global phone_number, chat_id
         phone_number = message.contact.phone_number
         chat_id = message.from_user.id
-        payload = {
-            "type": "phone",
-            "chat_id": chat_id,
-            "phone_number": phone_number
+        params = {
+            'type': 'phone',
+            'chat_id': 901569590,
+            'phone_number': '+998933411945'
         }
-        payload_json = json.dumps(payload)
-        response = requests.post(api_url, data=payload_json, headers={'Content-Type': 'application/json'})
-        if response.status_code == 200:
-            print("Data sent successfully to the API")
-        else:
-            print("Failed to send data to the API")
-        await message.answer(f"Клиент : {message.contact.full_name}\nTелефон: {message.contact.phone_number}",
-                             reply_markup=user_uz)
+        headers = {
+            'Authorization': 'Basic SElMT0w6MHV0MGZiMHVuRA==',
+            'User-Agent': 'PostmanRuntime/7.35.0',
+            'Accept': '*/*',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Connection': 'keep-alive'
+        }
+        try:
+            response = requests.get(api_url, params=params, headers=headers)
+            if response.ok:
+                if 'application/json' in response.headers.get('Content-Type', ''):
+                    data = response.json()
+                    result = response.text
+                else:
+                    result = f"Response is not in JSON format: {response.text}"
+            else:
+                result = f"Request failed with status code {response.status_code}: {response.reason}"
+            await message.answer(f"{data.get('RU')}", reply_markup=user_uz)
 
+        except requests.exceptions.RequestException as e:
+            result = f"Request failed: {e}"
 
+            await message.answer(f"{data.get('RU')}")
 
 
 
         @dp.message_handler(text='Проверка долга ＄')
         async def ru_baz(message: types.Message):
+            chat_id =message.from_user.id
+            params = {
+                'type': 'contracts',
+                'chat_id': 901569590
+            }
+            headers = {
+                'Authorization': 'Basic SElMT0w6MHV0MGZiMHVuRA==',
+                'User-Agent': 'PostmanRuntime/7.35.0',
+                'Accept': '*/*',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Connection': 'keep-alive'
+            }
+            try:
+                response = requests.get(api_url, params=params, headers=headers)
+                if response.ok:
+                    if 'application/json' in response.headers.get('Content-Type', ''):
+                        data = response.json()
+                        con = {}
+                        for i in data.get('contracts'):
+                            for k, v in i.items():
+                                con[k] = v
+                                await message.answer(f"{k}---{v}".format())
+                        result = response.text
+                    else:
+                        result = f"Response is not in JSON format: {response.text}"
+                        await message.answer(f"Это твоя ошибка {result}")
+                else:
+                    result = f"Request failed with status code {response.status_code}: {response.reason}"
+                    await message.answer(f"Это твоя ошибка {result}")
+
+            except requests.exceptions.RequestException as e:
+                result = f"Request failed: {e}"
+                await message.answer(f"Sizdagi xatolik {result}")
             await message.answer(f"Выберите один из следующих разделов:", reply_markup=c_button_ru)
+
+            @dp.message_handler(text = 'AllSumm')
+            async def all(message: types.Message):
+                chat_id = message.from_user.id
+                params = {
+                    'type': 'debt',
+                    'chat_id': 901569590
+                }
+                headers = {
+                    'Authorization': 'Basic SElMT0w6MHV0MGZiMHVuRA==',
+                    'User-Agent': 'PostmanRuntime/7.35.0',
+                    'Accept': '*/*',
+                    'Accept-Encoding': 'gzip, deflate, br',
+                    'Connection': 'keep-alive'
+                }
+                try:
+                    response = requests.get(api_url, params=params, headers=headers)
+                    if response.ok:
+                        if 'application/json' in response.headers.get('Content-Type', ''):
+                            data = response.json()
+                            print("Mana", data)
+                            for key, value in data.items():
+                                if data['allsumm'] == None:
+                                    await message.answer("У вас еще нет средств")
+                                else:
+                                    await message.answer(f"{data['allsumm']}----{data['contracts']}")
+                            result = response.text
+                        else:
+                            result = f"Response is not in JSON format: {response.text}"
+                            await message.answer(f"Oшибка--{result}")
+                    else:
+                        result = f"Request failed with status code {response.status_code}: {response.reason}"
+                        await message.answer(f"Oшибка--{result}")
+
+                except requests.exceptions.RequestException as e:
+                    result = f"Request failed: {e}"
+                    await message.answer(f"Oшибка--{result}")
+
+            @dp.message_handler(text = 'Вернуться в главное меню 🔙')
+            async def back(message: types.Message):
+                await message.answer(text = "Orqaga",reply_markup=user_ru)
 
         @dp.message_handler(text='Связаться с нами 📞')
         async def admin(message: types.Message):
             await message.answer("Admin: @pm_hilol")
 
         @dp.message_handler(text='Приобретение акта 🧾')
-        async def admin(message: types.Message):
-            await message.answer("По какому договору вы хотите получить акт-сверку?", reply_markup=akt_button)
+        async def start_handler(message: types.Message, state: FSMContext):
+            await TimeInput.start_time.set()
+            await message.answer("Введите дату начала: ")
+
+
+        @dp.message_handler(state=TimeInput.start_time)
+        async def start_time_handler(message: types.Message, state: FSMContext):
+            if re.match(r'\d{4}-\d{2}-\d{2}', message.text):
+                async with state.proxy() as data:
+                    data['start'] = message.text
+                    global start_t
+                    start_t = message.text
+                    await TimeInput.next()
+                    await message.answer("Введите дату окончания: ")
+            else:
+                await message.answer("Введите дату в неправильном формате (чч:мм): ")
+
+
+        @dp.message_handler(state=TimeInput.end_time)
+        async def end_time_handler(message: types.Message, state: FSMContext):
+            if re.match(r'\d{4}-\d{2}-\d{2}', message.text):
+                async with state.proxy() as data:
+                    data['finish'] = message.text
+                    global start_t
+                    print(type(message.text))
+                    a = start_t + 'T00:00:00'
+                    f = message.text + 'T00:00:00'
+                    start = datetime.strptime(a, "%Y-%m-%dT%H:%M:%S")
+                    finish = datetime.strptime(f, "%Y-%m-%dT%H:%M:%S")
+                    start_formatted = start.strftime("%Y-%m-%d %H:%M:%S")
+                    finish_formatted = finish.strftime("%Y-%m-%d %H:%M:%S")
+                    chat_id = message.from_user.id
+                    params = {
+                    "type": "reconciliation_act",
+                        "chat_id": chat_id,
+                        "start":start_formatted,
+                        "finish":finish_formatted
+                }
+                headers = {
+                    'Authorization': 'Basic SElMT0w6MHV0MGZiMHVuRA==',
+                    'User-Agent': 'PostmanRuntime/7.35.0',
+                    'Accept': '*/*',
+                    'Accept-Encoding': 'gzip, deflate, br',
+                    'Connection': 'keep-alive'
+                }
+                try:
+                    response = requests.get(api_url, params=params, headers=headers)
+                    if response.ok:
+                        if 'application/json' in response.headers.get('Content-Type', ''):
+                            data = response.json()
+                            print("Mana", data)
+                            for key, value in data.items():
+                                if data['allsumm'] == None:
+                                    await message.answer("У вас еще нет средств ")
+                                else:
+                                    await message.answer(f"{data['allsumm']}----{data['contracts']}")
+                            result = response.text
+                        else:
+                            result = f"Response is not in JSON format: {response.text}"
+                            await message.answer(f"Это твоя ошибка {result}")
+                    else:
+                        result = f"Request failed with status code {response.status_code}: {response.reason}"
+                        await message.answer(f"Это твоя ошибка {result}")
+
+                except requests.exceptions.RequestException as e:
+                    result = f"Request failed: {e}"
+                    await message.answer(f"Это твоя ошибка {result}")
+                await message.answer(f"Start time: {data['start']}, Finish time: {data['finish']}")
+                await state.finish()
+                    
+            else:
+                await message.answer("Введите дату в неправильном формате (чч:мм): ")
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -293,35 +493,194 @@ async def eng(message: types.Message):
         global phone_number, chat_id
         phone_number = message.contact.phone_number
         chat_id = message.from_user.id
-        payload = {
-            "type": "phone",
-            "chat_id": chat_id,
-            "phone_number": phone_number
+        params = {
+            'type': 'phone',
+            'chat_id': 901569590,
+            'phone_number': '+998933411945'
         }
-        payload_json = json.dumps(payload)
-        response = requests.post(api_url, data=payload_json, headers={'Content-Type': 'application/json'})
-        if response.status_code == 200:
-            print("Data sent successfully to the API")
-        else:
-            print("Failed to send data to the API")
-        await message.answer(f"Client : {message.contact.full_name}\nPhone: {message.contact.phone_number}",
-                             reply_markup=user_uz)
+        headers = {
+            'Authorization': 'Basic SElMT0w6MHV0MGZiMHVuRA==',
+            'User-Agent': 'PostmanRuntime/7.35.0',
+            'Accept': '*/*',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Connection': 'keep-alive'
+        }
+        try:
+            response = requests.get(api_url, params=params, headers=headers)
+            if response.ok:
+                if 'application/json' in response.headers.get('Content-Type', ''):
+                    data = response.json()
+                    result = response.text
+                else:
+                    result = f"Response is not in JSON format: {response.text}"
+            else:
+                result = f"Request failed with status code {response.status_code}: {response.reason}"
+            await message.answer(f"{data.get('ENG')}", reply_markup=user_uz)
 
+        except requests.exceptions.RequestException as e:
+            result = f"Request failed: {e}"
 
+            await message.answer(f"{data.get('ENG')}")
 
 
 
         @dp.message_handler(text='Debt check ＄')
         async def ru_baz(message: types.Message):
+            chat_id = message.from_user.id
+            params = {
+                'type': 'contracts',
+                'chat_id': 901569590
+            }
+            headers = {
+                'Authorization': 'Basic SElMT0w6MHV0MGZiMHVuRA==',
+                'User-Agent': 'PostmanRuntime/7.35.0',
+                'Accept': '*/*',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Connection': 'keep-alive'
+            }
+            try:
+                response = requests.get(api_url, params=params, headers=headers)
+                if response.ok:
+                    if 'application/json' in response.headers.get('Content-Type', ''):
+                        data = response.json()
+                        con = {}
+                        for i in data.get('contracts'):
+                            for k, v in i.items():
+                                con[k] = v
+                                await message.answer(f"{k}---{v}".format())
+                        result = response.text
+                    else:
+                        result = f"Response is not in JSON format: {response.text}"
+                        await message.answer(f"Your error is {result}")
+                else:
+                    result = f"Request failed with status code {response.status_code}: {response.reason}"
+                    await message.answer(f"Your error is {result}")
+
+            except requests.exceptions.RequestException as e:
+                result = f"Request failed: {e}"
+                await message.answer(f"Your error is {result}")
             await message.answer(f"Choose one of the following sections:", reply_markup=c_button_eng)
+
+            @dp.message_handler(text = 'AllSumm')
+            async def all(message: types.Message):
+                chat_id = message.from_user.id
+                params = {
+                    'type': 'debt',
+                    'chat_id': 901569590
+                }
+                headers = {
+                    'Authorization': 'Basic SElMT0w6MHV0MGZiMHVuRA==',
+                    'User-Agent': 'PostmanRuntime/7.35.0',
+                    'Accept': '*/*',
+                    'Accept-Encoding': 'gzip, deflate, br',
+                    'Connection': 'keep-alive'
+                }
+                try:
+                    response = requests.get(api_url, params=params, headers=headers)
+                    if response.ok:
+                        if 'application/json' in response.headers.get('Content-Type', ''):
+                            data = response.json()
+                            print("Mana", data)
+                            for key, value in data.items():
+                                if data['allsumm'] == None:
+                                    await message.answer("You have not debt yet")
+                                else:
+                                    await message.answer(f"{data['allsumm']}----{data['contracts']}")
+                            result = response.text
+                        else:
+                            result = f"Response is not in JSON format: {response.text}"
+                            await message.answer(f"Error--{result}")
+                    else:
+                        result = f"Request failed with status code {response.status_code}: {response.reason}"
+                        await message.answer(f"Error--{result}")
+
+                except requests.exceptions.RequestException as e:
+                    result = f"Request failed: {e}"
+                    await message.answer(f"Error--{result}")
+
+            @dp.message_handler(text = 'Return to main menu 🔙')
+            async def back(message: types.Message):
+                await message.answer(text = "Orqaga",reply_markup=user_eng)
+
 
         @dp.message_handler(text='Contact us 📞')
         async def admin(message: types.Message):
             await message.answer("Admin: @pm_hilol")
 
+        
         @dp.message_handler(text='Acquiring an act 🧾')
-        async def admin(message: types.Message):
-            await message.answer("Under which contract do you want to get an act-sverka?", reply_markup=akt_button)
+        async def start_handler(message: types.Message, state: FSMContext):
+            await TimeInput.start_time.set()
+            await message.answer("Enter beginning period: ")
+
+
+        @dp.message_handler(state=TimeInput.start_time)
+        async def start_time_handler(message: types.Message, state: FSMContext):
+            if re.match(r'\d{4}-\d{2}-\d{2}', message.text):
+                async with state.proxy() as data:
+                    data['start'] = message.text
+                    global start_t
+                    start_t = message.text
+                    await TimeInput.next()
+                    await message.answer("Enter finishing time: ")
+            else:
+                await message.answer("Enter data in irregular format (chch:mm): ")
+
+
+        @dp.message_handler(state=TimeInput.end_time)
+        async def end_time_handler(message: types.Message, state: FSMContext):
+            if re.match(r'\d{4}-\d{2}-\d{2}', message.text):
+                async with state.proxy() as data:
+                    data['finish'] = message.text
+                    global start_t
+                    print(type(message.text))
+                    a = start_t + 'T00:00:00'
+                    f = message.text + 'T00:00:00'
+                    start = datetime.strptime(a, "%Y-%m-%dT%H:%M:%S")
+                    finish = datetime.strptime(f, "%Y-%m-%dT%H:%M:%S")
+                    start_formatted = start.strftime("%Y-%m-%d %H:%M:%S")
+                    finish_formatted = finish.strftime("%Y-%m-%d %H:%M:%S")
+                    chat_id = message.from_user.id
+                    params = {
+                    "type": "reconciliation_act",
+                        "chat_id": chat_id,
+                        "start":start_formatted,
+                        "finish":finish_formatted
+                }
+                headers = {
+                    'Authorization': 'Basic SElMT0w6MHV0MGZiMHVuRA==',
+                    'User-Agent': 'PostmanRuntime/7.35.0',
+                    'Accept': '*/*',
+                    'Accept-Encoding': 'gzip, deflate, br',
+                    'Connection': 'keep-alive'
+                }
+                try:
+                    response = requests.get(api_url, params=params, headers=headers)
+                    if response.ok:
+                        if 'application/json' in response.headers.get('Content-Type', ''):
+                            data = response.json()
+                            print("Mana", data)
+                            for key, value in data.items():
+                                if data['allsumm'] == None:
+                                    await message.answer("You have not debt ")
+                                else:
+                                    await message.answer(f"{data['allsumm']}----{data['contracts']}")
+                            result = response.text
+                        else:
+                            result = f"Response is not in JSON format: {response.text}"
+                            await message.answer(f"Error {result}")
+                    else:
+                        result = f"Request failed with status code {response.status_code}: {response.reason}"
+                        await message.answer(f"Error {result}")
+
+                except requests.exceptions.RequestException as e:
+                    result = f"Request failed: {e}"
+                    await message.answer(f"Error {result}")
+                await message.answer(f"Start time: {data['start']}, Finish time: {data['finish']}")
+                await state.finish()
+                    
+            else:
+                await message.answer("Enter data in irregular format (chch:mm): ")
 
 
 
