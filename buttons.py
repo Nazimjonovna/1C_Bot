@@ -2,17 +2,25 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardBut
 
 lang = ReplyKeyboardMarkup(
     keyboard=[
-        [KeyboardButton('🇺🇿')],
-        [KeyboardButton('🇷🇺')],
-        [KeyboardButton('🇬🇧')],
+        [KeyboardButton('Uzb')],
+        [KeyboardButton('Rus')],
+        [KeyboardButton('Eng')],
     ],
     resize_keyboard=True
 )
 contact_uz = ReplyKeyboardMarkup(
     keyboard=[
-        [KeyboardButton('Ulashish 📞', request_contact=True)]
+        [KeyboardButton('Ulashish', request_contact=True)]
     ],
     resize_keyboard=True
+)
+
+kop = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [InlineKeyboardButton("Xa", callback_data='Xa')],
+        [InlineKeyboardButton("Yo'q", callback_data="Yo'q")],
+        [InlineKeyboardButton("Orqaga", callback_data='Orqaga')],
+    ]
 )
 
 contact_ru = ReplyKeyboardMarkup(
@@ -23,16 +31,17 @@ contact_ru = ReplyKeyboardMarkup(
 )
 contact_eng = ReplyKeyboardMarkup(
     keyboard=[
-        [KeyboardButton('Share 📞', request_contact=True)]
+        [KeyboardButton('Share', request_contact=True)]
     ],
     resize_keyboard=True
 )
 
 user_uz = ReplyKeyboardMarkup(
     keyboard=[
-        [KeyboardButton('Qarzdorlikni tekshirish ＄')],
-        [KeyboardButton('Biz bilan bog’lanish 📞')],
-        [KeyboardButton('Akt sverka olish 🧾')]
+        [KeyboardButton('Qarzdorlikni tekshirish')],
+        [KeyboardButton("Seriya bo'yicha izlash")],
+        [KeyboardButton('Biz bilan bog’lanish')],
+        [KeyboardButton('Akt sverka olish')]
     ],
     resize_keyboard=True
 )
@@ -55,44 +64,9 @@ user_eng = ReplyKeyboardMarkup(
     resize_keyboard=True
 )
 
-c_button_uz = ReplyKeyboardMarkup(
-    keyboard=[
-        [KeyboardButton('AllSumm'),
-        #  KeyboardButton('Currency'),
-        #  KeyboardButton('Contract'),
-        #  KeyboardButton('ContractSumm'),
-        #  KeyboardButton('ContractCurrency'),
-        #  KeyboardButton('ContractEkvivalent'),
-         KeyboardButton('Bosh menyuga qaytish 🔙')]
-    ],
-    resize_keyboard=True,
-)
 
-c_button_ru = ReplyKeyboardMarkup(
-    keyboard=[
-        [KeyboardButton('AllSumm'),
-        #  KeyboardButton('Currency'),
-        #  KeyboardButton('Contract'),
-        #  KeyboardButton('ContractSumm'),
-        #  KeyboardButton('ContractCurrency'),
-        #  KeyboardButton('ContractEkvivalent'),
-         KeyboardButton('Вернуться в главное меню 🔙')]
-    ],
-    resize_keyboard=True,
-)
 
-c_button_eng = ReplyKeyboardMarkup(
-    keyboard=[
-        [KeyboardButton('AllSumm'),
-        #  KeyboardButton('Currency'),
-        #  KeyboardButton('Contract'),
-        #  KeyboardButton('ContractSumm'),
-        #  KeyboardButton('ContractCurrency'),
-        #  KeyboardButton('ContractEkvivalent'),
-         KeyboardButton('Return to main menu 🔙')]
-    ],
-    resize_keyboard=True,
-)
+
 
 akt_button = InlineKeyboardMarkup(
     inline_keyboard=[
