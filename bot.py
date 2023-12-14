@@ -1,4 +1,5 @@
 import logging
+import asyncio
 import datetime
 from aiogram import Bot, Dispatcher, executor, types
 from buttons import *
@@ -25,8 +26,8 @@ API_TOKEN = '6619844226:AAFUabaziFZyL70r3dmcF1eHBU66dA1y4Fo'
 
 headers = {
             'Authorization': 'Basic SElMT0w6MHV0MGZiMHVuRA==',
-            'User-Agent': 'PostmanRuntime/7.35.0',
-            'Accept': '*/*',
+            # 'User-Agent': 'PostmanRuntime/7.35.0',
+            # 'Accept': '*/*',
             'Accept-Encoding': 'gzip, deflate, br',
             'Connection': 'keep-alive'
         }
@@ -98,10 +99,13 @@ async def uzb(message: types.Message):
             'language':lan
         }
         try:
+            print('try')
             response = requests.get(api_url, params=params, headers=headers)
+            print(response.status_code)
             if response.ok:
                 if 'application/json' in response.headers.get('Content-Type', ''):
                     data = response.json()
+                    print(data)
                     result = response.text
                 else:
                     result = f"Response is not in JSON format: {response.text}"
