@@ -2,9 +2,9 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardBut
 
 lang = ReplyKeyboardMarkup(
     keyboard=[
-        [KeyboardButton('Uzb')],
-        [KeyboardButton('Rus')],
-        [KeyboardButton('Eng')],
+        [KeyboardButton('🇺🇿')],
+        [KeyboardButton('🇷🇺')],
+        [KeyboardButton('🇺🇸')],
     ],
     resize_keyboard=True
 )
@@ -38,8 +38,8 @@ contact_eng = ReplyKeyboardMarkup(
 
 user_uz = ReplyKeyboardMarkup(
     keyboard=[
-        [KeyboardButton('Qarzdorlikni tekshirish')],
-        [KeyboardButton("Seriya bo'yicha izlash")],
+        [KeyboardButton('Qarzdorlikni tekshirish'),
+        KeyboardButton("Seriya bo'yicha izlash")],
         [KeyboardButton('Biz bilan bog’lanish')],
         [KeyboardButton('Akt sverka olish')]
     ],
@@ -48,7 +48,8 @@ user_uz = ReplyKeyboardMarkup(
 
 user_ru = ReplyKeyboardMarkup(
     keyboard=[
-        [KeyboardButton('Проверка долга ＄')],
+        [KeyboardButton('Проверка долга ＄'),
+        KeyboardButton("Поиск по серии")],
         [KeyboardButton('Связаться с нами 📞')],
         [KeyboardButton('Приобретение акта 🧾')]
     ],
@@ -57,13 +58,30 @@ user_ru = ReplyKeyboardMarkup(
 
 user_eng = ReplyKeyboardMarkup(
     keyboard=[
-        [KeyboardButton('Debt check ＄')],
+        [KeyboardButton('Debt check ＄'),
+        KeyboardButton("Search by series")],
         [KeyboardButton('Contact us 📞')],
         [KeyboardButton('Acquiring an act 🧾')]
     ],
     resize_keyboard=True
 )
 
+kop_eng = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [InlineKeyboardButton("Yes", callback_data='Yes')],
+        [InlineKeyboardButton("No", callback_data="No")],
+        [InlineKeyboardButton("Back", callback_data='Back')],
+    ]
+)
+
+
+kop_ru = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [InlineKeyboardButton("Да", callback_data='Да')],
+        [InlineKeyboardButton("Нет", callback_data="Нет")],
+        [InlineKeyboardButton("Назад", callback_data='Назад')],
+    ]
+)
 
 
 
