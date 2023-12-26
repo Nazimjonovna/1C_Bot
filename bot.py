@@ -18,7 +18,7 @@ telegram_bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
 
 # Your API endpoint URL
 
-API_TOKEN = '5666343720:sxwdjchywetvcjkkwmcobtyywed233'
+
 
 headers = {
             'Authorization': 'Basic SElMT0w6MHV0MGZiMHVuRA==',
@@ -64,6 +64,7 @@ async def uzb(message: types.Message):
             if 'application/json' in response.headers.get('Content-Type', ''):
                 data = response.json()
                 result = response.text
+            
             else:
                 result = f"Response is not in JSON format: {response.text}"
         else:
@@ -94,8 +95,11 @@ async def uzb(message: types.Message):
                 if 'application/json' in response.headers.get('Content-Type', ''):
                     data = response.json()
                     p = data.get("UZ")
-                    result = response.text
-                    await message.answer(f"{p}", reply_markup=user_uz)
+                    if p is not None:
+                        result = response.text
+                        await message.answer(f"{p}", reply_markup=user_uz)
+                    else:
+                        await message.answer(f"Uzr xurmatli mijoz siz haqingizda ma'lumot topilmadi.\nAdminlarimizga murojaat etishingizni so'rab qolamiz|@pm_hilol", reply_markup=start_t)
                 else:
                     result = f"Response is not in JSON format: {response.text}"
             else:
@@ -455,7 +459,10 @@ async def uzb(message: types.Message):
                     data = response.json()
                     p = data.get("RU")
                     result = response.text
-                    await message.answer(f"{p}", reply_markup=user_ru)
+                    if p is not None:
+                        await message.answer(f"{p}", reply_markup=user_ru)
+                    else:
+                        await message.answer(f"Извините, уважаемый клиент, никакой информации о Вас не найдено.\nПожалуйста, свяжитесь с нашими администраторами.|@pm_hilol", reply_markup=start_t)
                 else:
                     result = f"Response is not in JSON format: {response.text}"
             else:
@@ -831,7 +838,10 @@ async def uzb(message: types.Message):
                     data = response.json()
                     p = data.get("RU")
                     result = response.text
-                    await message.answer(f"{p}", reply_markup=user_eng)
+                    if p is not None:
+                        await message.answer(f"{p}", reply_markup=user_eng)
+                    else:
+                        await message.answer(f"Sorry, dear client, no information about you was found.\nPlease contact our administrators.|@pm_hilol", reply_markup=start_t)
                 else:
                     result = f"Response is not in JSON format: {response.text}"
             else:

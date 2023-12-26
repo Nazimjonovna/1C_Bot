@@ -1,5 +1,13 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardButton, InlineKeyboardMarkup
 
+start_t = ReplyKeyboardMarkup(
+    keyboard=[
+        [KeyboardButton('/start')],
+    ],
+    resize_keyboard=True,
+)
+
+
 lang = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton('🇺🇿')],
