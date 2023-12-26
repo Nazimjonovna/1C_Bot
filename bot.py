@@ -17,13 +17,8 @@ from aiogram.types import CallbackQuery
 telegram_bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
 
 # Your API endpoint URL
-api_url = 'http://5.182.26.180:55565/telegram/hs/hl/gd'
-login = 'HILOL'
-password = '0ut0fb0unD'
 
-# Token of tg_Bot
-# API_TOKEN = '6619844226:AAFUabaziFZyL70r3dmcF1eHBU66dA1y4Fo'
-API_TOKEN = '5666343720:AAEKYBzyoDlx3OJX8xQQOAQwpIqDNk6ETbw'
+API_TOKEN = '5666343720:sxwdjchywetvcjkkwmcobtyywed233'
 
 headers = {
             'Authorization': 'Basic SElMT0w6MHV0MGZiMHVuRA==',
