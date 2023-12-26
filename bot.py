@@ -12,8 +12,8 @@ import io
 import requests
 import os
 from aiogram.types import CallbackQuery
-from dotenv import load_dotenv
-load_dotenv()
+# from dotenv import load_dotenv
+# load_dotenv()
 telegram_bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
 
 # Your API endpoint URL
@@ -111,7 +111,7 @@ async def uzb(message: types.Message):
             result = f"Request failed: {e}"
             await message.answer(f"{data.get('UZ')}")
 
-    @dp.message_handler(text="Qarzdorlikni tekshirish")
+    @dp.message_handler(text="Qarzdorlikni tekshirish") # TODO this inlinekeyboard button
     async def tel1(message: types.Message):
         params = {
             "type": "contracts",
@@ -127,17 +127,18 @@ async def uzb(message: types.Message):
                 row = []
                 for index, contract_info in enumerate(data['contracts'], start=1):
                     button_text = str(contract_info['contract'])
+                    callback_text = str(contract_info['contractID'])
                     ta[str(contract_info['contract'])] = str(contract_info['contractID'])
-                    button = KeyboardButton(text=button_text)
+                    button = InlineKeyboardButton(text=button_text, callback_data = callback_text)
                     row.append(button)
                     if index % 2 == 0:
                         buttons.append([button])
                         row = []
                 if row:
                     buttons.append(row)
-                back_button = KeyboardButton(text="Orqaga")
+                back_button = InlineKeyboardButton(text="Orqaga", callback_data='Orqaga')
                 buttons.append([back_button])
-                reply_markup = ReplyKeyboardMarkup(keyboard=buttons)
+                reply_markup = InlineKeyboardMarkup(inline_keyboard = buttons)
                 await message.answer("Choose which one of them", reply_markup=reply_markup)
                 await Input.contracts.set()
             else:
@@ -145,9 +146,11 @@ async def uzb(message: types.Message):
         else:
             await message.answer("Quyidagilardan tanlang: ", reply_markup=user_uz)
 
-        @dp.message_handler(state=Input.contracts)
-        async def tel2(message: types.Message, state: FSMContext):
-            messa = message.text
+        @dp.callback_query_handler(state=Input.contracts)
+        async def tel2(call: types.CallbackQuery, state: FSMContext):
+            global messa
+            messa = call.data
+            k = next(key for key, value in ta.items() if value == messa)
             if messa != "Orqaga":
                 params = {
                     "type": "debt",
@@ -157,62 +160,79 @@ async def uzb(message: types.Message):
                 if response:
                     data = response.json()
                     global summ, contract_id
-                    contract = message.text
-                    contract_id = ta[contract]
+                    contract_id = k
                     summ = data['allsumm']
                     val = data['currency']
                     for i in range(len(data['contracts'])):
-                        if data['contracts'][i]['contract'] == contract:
+                        if data['contracts'][i]['contract'] == contract_id:
                             contractsumm = data['contracts'][i]['contractsumm']
                             contractcurrency = data['contracts'][i]['contractcurrency']
                             contractekvivalent = data['contracts'][i]['contractekvivalent']
-                    await message.answer(
-                        f"Sizning jammi qarzdorligingiz: {summ} {val},\n va ushbu {contract}-shartnomasi bo'yicha ma'lumotlar:\n{contractsumm} {contractcurrency}\n ekvvivaletligi: {contractekvivalent}")
-                    await state.finish()
-                    await message.answer("Quyidagilardan tanlang: ", reply_markup=kop)
+                    if contractsumm is not None:
+                        message_text = f"Sizning jammi qarzdorligingiz: {summ} {val},\n va ushbu {contract_id}-shartnomasi bo'yicha ma'lumotlar:\n{contractsumm} {contractcurrency}\n ekvvivaletligi: {contractekvivalent}"
+                        await bot.send_message(chat_id=chat_id, text = message_text)
+                        await state.finish()
+                        await bot.send_message(message.chat.id, "Quyidagilardan tanlang: ", reply_markup=kop)
+                    else:
+                        await bot.send_message(chat_id=chat_id, text = message_text)
             else:
-                await message.answer('Orqaga', reply_markup=user_uz)
+                await bot.send_message(message.chat.id, 'Orqaga', reply_markup=user_uz)
 
-                @dp.callback_query_handler(text='Xa')
-                async def tel3(callback_query: types.CallbackQuery):
-                    user_id = callback_query.from_user.id
-                    date = str(datetime.datetime.today().date()) + "T00:00:00"
-                    params = {
-                        "type": "debt_check",
-                        "chat_id": message.from_user.id,
-                        "contract_id": contract_id,
-                        "check": "true",
-                        'summ': summ,
-                        'date': date
-                    }
-                    response = requests.get(api_url, params=params, headers=headers)
-                    if response:
-                        data = response.json()
-                        await bot.send_message(user_id, f"{data['succed_text']}", reply_markup = user_uz)
+        @dp.callback_query_handler(text='Xa')
+        async def tel3(callback_query: types.CallbackQuery):
+            user_id = callback_query.from_user.id
+            date = str(datetime.datetime.today().date()) + "T00:00:00"
+            params = {
+                "type": "debt_check",
+                "chat_id": callback_query.from_user.id,
+                "contract_id": messa,
+                "check": "true",
+                'summ': summ,
+                'date': date
+            }
+            print(params)
+            response = requests.get(api_url, params=params, headers=headers)
+            if response.ok:
+                print("kk", response.status_code)
+                data = response.json()
+                await bot.send_message(user_id, f"{data['succed_text']}")
+                await bot.edit_message_reply_markup(
+                    chat_id=callback_query.message.chat.id,
+                    message_id=callback_query.message.message_id,
+                    reply_markup=None
+                )
+                await bot.send_message(user_id, "Quyidagilardan birini tanlang: ", reply_markup=user_uz)
 
-                @dp.callback_query_handler(text="Yo'q")
-                async def tel4(callback_query: types.CallbackQuery):
-                    user_id = callback_query.from_user.id
-                    date = str(datetime.datetime.today().date()) + "T00:00:00"
-                    params = {
-                        "type": "debt_check",
-                        "chat_id": message.from_user.id,
-                        "contract_id": contract_id,
-                        "check": "true",
-                        'summ': summ,
-                        'date': date
-                    }
-                    response = requests.get(api_url, params=params, headers=headers)
-                    if response:
-                        await bot.send_message(user_id, f"{data['succed_text']}", reply_markup = user_uz)
 
-                @dp.callback_query_handler(text="Orqaga")
-                async def tel4(callback_query: types.CallbackQuery):
-                    chat_id = callback_query.from_user.id
-                    await bot.answer_callback_query(callback_query.id)
-                    await bot.edit_message_reply_markup(chat_id=chat_id,
-                                                        message_id=callback_query.message.message_id,
-                                                        reply_markup=None)
+        @dp.callback_query_handler(text="Yo'q")
+        async def tel4(callback_query: types.CallbackQuery):
+            user_id = callback_query.from_user.id
+            date = str(datetime.datetime.today().date()) + "T00:00:00"
+            params = {
+                "type": "debt_check",
+                "chat_id": message.from_user.id,
+                "contract_id": messa,
+                "check": "true",
+                'summ': summ,
+                'date': date
+            }
+            response = requests.get(api_url, params=params, headers=headers)
+            if response:
+                await bot.send_message(user_id, f"{data['succed_text']}")
+                await bot.edit_message_reply_markup(
+                    chat_id=callback_query.message.chat.id,
+                    message_id=callback_query.message.message_id,
+                    reply_markup=None
+                )
+                await bot.send_message(user_id, "Quyidagilardan birini tanlang: ", reply_markup=user_uz)
+
+        @dp.callback_query_handler(text="Orqaga")
+        async def tel4(callback_query: types.CallbackQuery):
+            chat_id = callback_query.from_user.id
+            await bot.answer_callback_query(callback_query.id)
+            await bot.edit_message_reply_markup(chat_id=chat_id,
+                                                message_id=callback_query.message.message_id,
+                                                reply_markup=None)
 
     @dp.message_handler(text="Seriya bo'yicha izlash")
     async def tel4(message: types.Message):
@@ -225,7 +245,7 @@ async def uzb(message: types.Message):
         sery = message.text
         params = {
             "type": "search_by_series",
-            "sery": 353742533112405,
+            "sery": sery,
             "chat_id": message.from_user.id
         }
         response = requests.get(api_url, params=params, headers=headers)
@@ -329,7 +349,6 @@ async def uzb(message: types.Message):
                                 "finish":finish,
                                 'contract_id':msgcall
                         }
-                        print('params', params)
                         response = requests.get(api_url, params=params, headers=headers)
                         try:
                             if response.ok:
@@ -452,7 +471,8 @@ async def uzb(message: types.Message):
             result = f"Request failed: {e}"
             await message.answer(f"{data.get('RU')}")
 
-    @dp.message_handler(text="Проверка долга ＄")
+
+    @dp.message_handler(text="Проверка долга ＄") # TODO this inlinekeyboard button
     async def tel1(message: types.Message):
         params = {
             "type": "contracts",
@@ -468,27 +488,29 @@ async def uzb(message: types.Message):
                 row = []
                 for index, contract_info in enumerate(data['contracts'], start=1):
                     button_text = str(contract_info['contract'])
+                    callback_text = str(contract_info['contractID'])
                     ta[str(contract_info['contract'])] = str(contract_info['contractID'])
-                    button = KeyboardButton(text=button_text)
+                    button = InlineKeyboardButton(text=button_text, callback_data = callback_text)
                     row.append(button)
                     if index % 2 == 0:
                         buttons.append([button])
                         row = []
                 if row:
                     buttons.append(row)
-                back_button = KeyboardButton(text="Назад")
+                back_button = InlineKeyboardButton(text="Назад", callback_data='Назад')
                 buttons.append([back_button])
-                reply_markup = ReplyKeyboardMarkup(keyboard=buttons)
+                reply_markup = InlineKeyboardMarkup(inline_keyboard = buttons)
                 await message.answer("Choose which one of them", reply_markup=reply_markup)
                 await Input.contracts.set()
             else:
-                await message.answer("у вас есть данные", reply_markup=user_ru)
+                await message.answer("data yoq sizda", reply_markup=user_ru)
         else:
             await message.answer("Выберите из следующих: ", reply_markup=user_ru)
 
-        @dp.message_handler(state=Input.contracts)
-        async def tel2(message: types.Message, state: FSMContext):
-            messa = message.text
+        @dp.callback_query_handler(state=Input.contracts)
+        async def tel2(call: types.CallbackQuery, state: FSMContext):
+            messa = call.data
+            k = next(key for key, value in ta.items() if value == messa)
             if messa != "Назад":
                 params = {
                     "type": "debt",
@@ -498,62 +520,85 @@ async def uzb(message: types.Message):
                 if response:
                     data = response.json()
                     global summ, contract_id
-                    contract = message.text
-                    contract_id = ta[contract]
+                    contract_id = k
                     summ = data['allsumm']
                     val = data['currency']
                     for i in range(len(data['contracts'])):
-                        if data['contracts'][i]['contract'] == contract:
+                        if data['contracts'][i]['contract'] == contract_id:
                             contractsumm = data['contracts'][i]['contractsumm']
                             contractcurrency = data['contracts'][i]['contractcurrency']
                             contractekvivalent = data['contracts'][i]['contractekvivalent']
-                    await message.answer(
-                        f"Ваш общий долг: {summ} {val},\n и это {contract}-информация о контракте:\n{contractsumm} {contractcurrency}\n эквивалентность: {contractekvivalent}")
-                    await state.finish()
-                    await message.answer("Выберите из следующих: ", reply_markup=kop_ru)
+                    if contractsumm is not None:
+                        message_text = f"Ваш общий долг: {summ} {val},\n и это {contract_id}-информация о контракте:\n{contractsumm} {contractcurrency}\n эквивалентность: {contractekvivalent}"
+                        await bot.send_message(chat_id=chat_id, text = message_text)
+                        await state.finish()
+                        await bot.send_message(message.chat.id, "Выберите из следующих:  ", reply_markup=kop_ru)
+                    else:
+                        await bot.send_message(chat_id=chat_id, text = message_text)
             else:
-                await message.answer('Назад', reply_markup=user_uz)
+                await bot.send_message(message.chat.id, 'Orqaga', reply_markup=user_ru)
 
-                @dp.callback_query_handler(text='Да')
-                async def tel3(callback_query: types.CallbackQuery):
-                    user_id = callback_query.from_user.id
-                    date = str(datetime.datetime.today().date()) + "T00:00:00"
-                    params = {
-                        "type": "debt_check",
-                        "chat_id": message.from_user.id,
-                        "contract_id": contract_id,
-                        "check": "true",
-                        'summ': summ,
-                        'date': date
-                    }
-                    response = requests.get(api_url, params=params, headers=headers)
-                    if response:
-                        data = response.json()
-                        await bot.send_message(user_id, f"{data['succed_text']}", reply_markup = user_ru)
+        @dp.callback_query_handler(text='Да')
+        async def tel3(callback_query: types.CallbackQuery):
+            user_id = callback_query.from_user.id
+            date = str(datetime.datetime.today().date()) + "T00:00:00"
+            params = {
+                "type": "debt_check",
+                "chat_id": callback_query.from_user.id,
+                "contract_id": messa,
+                "check": "true",
+                'summ': summ,
+                'date': date
+            }
+            print(params)
+            response = requests.get(api_url, params=params, headers=headers)
+            if response.ok:
+                print("kk", response.status_code)
+                data = response.json()
+                await bot.send_message(user_id, f"{data['succed_text']}")
+                await bot.edit_message_reply_markup(
+                    chat_id=callback_query.message.chat.id,
+                    message_id=callback_query.message.message_id,
+                    reply_markup=None
+                )
+                await bot.send_message(user_id, "Выберите из следующих:  ", reply_markup=user_ru)
+            else:
+                await bot.send_message(user_id, "ehhh")
 
-                @dp.callback_query_handler(text="Нет")
-                async def tel4(callback_query: types.CallbackQuery):
-                    user_id = callback_query.from_user.id
-                    date = str(datetime.datetime.today().date()) + "T00:00:00"
-                    params = {
-                        "type": "debt_check",
-                        "chat_id": message.from_user.id,
-                        "contract_id": contract_id,
-                        "check": "true",
-                        'summ': summ,
-                        'date': date
-                    }
-                    response = requests.get(api_url, params=params, headers=headers)
-                    if response:
-                        await bot.send_message(user_id, f"{data['succed_text']}", reply_markup = user_ru)
 
-                @dp.callback_query_handler(text="Назад")
-                async def tel4(callback_query: types.CallbackQuery):
-                    chat_id = callback_query.from_user.id
-                    await bot.answer_callback_query(callback_query.id)
-                    await bot.edit_message_reply_markup(chat_id=chat_id,
-                                                        message_id=callback_query.message.message_id,
-                                                        reply_markup=None)
+        @dp.callback_query_handler(text="Нет")
+        async def tel4(callback_query: types.CallbackQuery):
+            user_id = callback_query.from_user.id
+            date = str(datetime.datetime.today().date()) + "T00:00:00"
+            params = {
+                "type": "debt_check",
+                "chat_id": message.from_user.id,
+                "contract_id": messa,
+                "check": "true",
+                'summ': summ,
+                'date': date
+            }
+            response = requests.get(api_url, params=params, headers=headers)
+            if response:
+                await bot.send_message(user_id, f"{data['succed_text']}")
+                await bot.edit_message_reply_markup(
+                    chat_id=callback_query.message.chat.id,
+                    message_id=callback_query.message.message_id,
+                    reply_markup=None
+                )
+                await bot.send_message(user_id, "Выберите из следующих:  ", reply_markup=user_ru)
+
+        @dp.callback_query_handler(text="Назад")
+        async def tel4(callback_query: types.CallbackQuery):
+            chat_id = callback_query.from_user.id
+            await bot.answer_callback_query(callback_query.id)
+            await bot.edit_message_reply_markup(chat_id=chat_id,
+                                                message_id=callback_query.message.message_id,
+                                                reply_markup=None)
+
+    
+
+                
 
     @dp.message_handler(text="Поиск по серии")
     async def tel4(message: types.Message):
@@ -802,7 +847,7 @@ async def uzb(message: types.Message):
             result = f"Request failed: {e}"
             await message.answer(f"{data.get('ENG')}")
 
-    @dp.message_handler(text="Debt check ＄")
+    @dp.message_handler(text="Debt check ＄") # TODO this inlinekeyboard button
     async def tel1(message: types.Message):
         params = {
             "type": "contracts",
@@ -818,27 +863,29 @@ async def uzb(message: types.Message):
                 row = []
                 for index, contract_info in enumerate(data['contracts'], start=1):
                     button_text = str(contract_info['contract'])
+                    callback_text = str(contract_info['contractID'])
                     ta[str(contract_info['contract'])] = str(contract_info['contractID'])
-                    button = KeyboardButton(text=button_text)
+                    button = InlineKeyboardButton(text=button_text, callback_data = callback_text)
                     row.append(button)
                     if index % 2 == 0:
                         buttons.append([button])
                         row = []
                 if row:
                     buttons.append(row)
-                back_button = KeyboardButton(text="Back")
+                back_button = InlineKeyboardButton(text="Back", callback_data='Back')
                 buttons.append([back_button])
-                reply_markup = ReplyKeyboardMarkup(keyboard=buttons)
+                reply_markup = InlineKeyboardMarkup(inline_keyboard = buttons)
                 await message.answer("Choose which one of them", reply_markup=reply_markup)
                 await Input.contracts.set()
             else:
-                await message.answer("You haven't info yet", reply_markup=user_ru)
+                await message.answer("data yoq sizda", reply_markup=user_eng)
         else:
-            await message.answer("Choose one of them: ", reply_markup=user_ru)
+            await message.answer("Choose one of them: ", reply_markup=user_eng)
 
-        @dp.message_handler(state=Input.contracts)
-        async def tel2(message: types.Message, state: FSMContext):
-            messa = message.text
+        @dp.callback_query_handler(state=Input.contracts)
+        async def tel2(call: types.CallbackQuery, state: FSMContext):
+            messa = call.data
+            k = next(key for key, value in ta.items() if value == messa)
             if messa != "Back":
                 params = {
                     "type": "debt",
@@ -848,62 +895,81 @@ async def uzb(message: types.Message):
                 if response:
                     data = response.json()
                     global summ, contract_id
-                    contract = message.text
-                    contract_id = ta[contract]
+                    contract_id = k
                     summ = data['allsumm']
                     val = data['currency']
                     for i in range(len(data['contracts'])):
-                        if data['contracts'][i]['contract'] == contract:
+                        if data['contracts'][i]['contract'] == contract_id:
                             contractsumm = data['contracts'][i]['contractsumm']
                             contractcurrency = data['contracts'][i]['contractcurrency']
                             contractekvivalent = data['contracts'][i]['contractekvivalent']
-                    await message.answer(
-                        f"Your total debt: {summ} {val},\n and this {contract}-contract information:\n{contractsumm} {contractcurrency}\n equivalence: {contractekvivalent}")
-                    await state.finish()
-                    await message.answer("Choose one of them: ", reply_markup=kop_eng)
+                    if contractsumm is not None:
+                        message_text = f"Your totel debt: {summ} {val},\n and this {contract_id}-information of contracts:\n{contractsumm} {contractcurrency}\n ekvivalents: {contractekvivalent}"
+                        await bot.send_message(chat_id=chat_id, text = message_text)
+                        await state.finish()
+                        await bot.send_message(message.chat.id, "Choose one of this:  ", reply_markup=kop_eng)
+                    else:
+                        await bot.send_message(chat_id=chat_id, text = message_text)
             else:
-                await message.answer('Back', reply_markup=user_eng)
+                await bot.send_message(message.chat.id, 'Back', reply_markup=user_eng)
 
-                @dp.callback_query_handler(text='Yes')
-                async def tel3(callback_query: types.CallbackQuery):
-                    user_id = callback_query.from_user.id
-                    date = str(datetime.datetime.today().date()) + "T00:00:00"
-                    params = {
-                        "type": "debt_check",
-                        "chat_id": message.from_user.id,
-                        "contract_id": contract_id,
-                        "check": "true",
-                        'summ': summ,
-                        'date': date
-                    }
-                    response = requests.get(api_url, params=params, headers=headers)
-                    if response:
-                        data = response.json()
-                        await bot.send_message(user_id, f"{data['succed_text']}", reply_markup = user_eng)
+        @dp.callback_query_handler(text='Yes')
+        async def tel3(callback_query: types.CallbackQuery):
+            user_id = callback_query.from_user.id
+            date = str(datetime.datetime.today().date()) + "T00:00:00"
+            params = {
+                "type": "debt_check",
+                "chat_id": callback_query.from_user.id,
+                "contract_id": messa,
+                "check": "true",
+                'summ': summ,
+                'date': date
+            }
+            print(params)
+            response = requests.get(api_url, params=params, headers=headers)
+            if response.ok:
+                print("kk", response.status_code)
+                data = response.json()
+                await bot.send_message(user_id, f"{data['succed_text']}")
+                await bot.edit_message_reply_markup(
+                    chat_id=callback_query.message.chat.id,
+                    message_id=callback_query.message.message_id,
+                    reply_markup=None
+                )
+                await bot.send_message(user_id, "Choose one of this:  ", reply_markup=user_ru)
+            else:
+                await bot.send_message(user_id, "ehhh")
 
-                @dp.callback_query_handler(text="No")
-                async def tel4(callback_query: types.CallbackQuery):
-                    user_id = callback_query.from_user.id
-                    date = str(datetime.datetime.today().date()) + "T00:00:00"
-                    params = {
-                        "type": "debt_check",
-                        "chat_id": message.from_user.id,
-                        "contract_id": contract_id,
-                        "check": "true",
-                        'summ': summ,
-                        'date': date
-                    }
-                    response = requests.get(api_url, params=params, headers=headers)
-                    if response:
-                        await bot.send_message(user_id, f"{data['succed_text']}", reply_markup = user_eng)
 
-                @dp.callback_query_handler(text="Back")
-                async def tel4(callback_query: types.CallbackQuery):
-                    chat_id = callback_query.from_user.id
-                    await bot.answer_callback_query(callback_query.id)
-                    await bot.edit_message_reply_markup(chat_id=chat_id,
-                                                        message_id=callback_query.message.message_id,
-                                                        reply_markup=None)
+        @dp.callback_query_handler(text="No")
+        async def tel4(callback_query: types.CallbackQuery):
+            user_id = callback_query.from_user.id
+            date = str(datetime.datetime.today().date()) + "T00:00:00"
+            params = {
+                "type": "debt_check",
+                "chat_id": message.from_user.id,
+                "contract_id": messa,
+                "check": "true",
+                'summ': summ,
+                'date': date
+            }
+            response = requests.get(api_url, params=params, headers=headers)
+            if response:
+                await bot.send_message(user_id, f"{data['succed_text']}")
+                await bot.edit_message_reply_markup(
+                    chat_id=callback_query.message.chat.id,
+                    message_id=callback_query.message.message_id,
+                    reply_markup=None
+                )
+                await bot.send_message(user_id, "Choose one of this:  ", reply_markup=user_ru)
+
+        @dp.callback_query_handler(text="Back")
+        async def tel4(callback_query: types.CallbackQuery):
+            chat_id = callback_query.from_user.id
+            await bot.answer_callback_query(callback_query.id)
+            await bot.edit_message_reply_markup(chat_id=chat_id,
+                                                message_id=callback_query.message.message_id,
+                                                reply_markup=None)
 
     @dp.message_handler(text="Search by series")
     async def tel4(message: types.Message):
