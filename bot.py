@@ -19,7 +19,6 @@ telegram_bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
 # Your API endpoint URL
 
 
-
 headers = {
             'Authorization': 'Basic SElMT0w6MHV0MGZiMHVuRA==',
             'Accept-Encoding': 'gzip, deflate, br',
@@ -250,11 +249,16 @@ async def uzb(message: types.Message):
         response = requests.get(api_url, params=params, headers=headers)
         if response:
             data = response.json()
-            contragent = data['contragent']
-            number = data['number']
-            nomenclature = data['nomenclature']
-            await message.answer(f"contragent: {contragent}\nNomer: {number}\nNomenclature: {nomenclature}")
-            await state.finish()
+            print(data)
+            if 'contragent' in data:
+                contragent = data['contragent']
+                number = data['number']
+                nomenclature = data['nomenclature']
+                await message.answer(f"Xaridor: {contragent}\nTelefon_nomeri: {number}\nTovar: {nomenclature}")
+                await state.finish()
+            else:
+                await state.finish()
+                await message.answer("Ushbu seriya raqam bo'yicha ma'lumot topilmadi", reply_markup=user_uz)
 
     @dp.message_handler(text = 'Biz bilan bog’lanish')
     async def admin(message: types.Message):
@@ -619,11 +623,15 @@ async def uzb(message: types.Message):
         response = requests.get(api_url, params=params, headers=headers)
         if response:
             data = response.json()
-            contragent = data['contragent']
-            number = data['number']
-            nomenclature = data['nomenclature']
-            await message.answer(f"contragent: {contragent}\nNomer: {number}\nNomenclature: {nomenclature}")
-            await state.finish()
+            if 'contragent' in data:
+                contragent = data['contragent']
+                number = data['number']
+                nomenclature = data['nomenclature']
+                await message.answer(f"Покупатель: {contragent}\nHомер телефона: {number}\nTовар: {nomenclature}")
+                await state.finish()
+            else:
+                await state.finish()
+                await message.answer("Для этого серийного номера информация не найдена", reply_markup=user_uz)
 
     @dp.message_handler(text = 'Связаться с нами 📞')
     async def admin(message: types.Message):
@@ -993,11 +1001,15 @@ async def uzb(message: types.Message):
         response = requests.get(api_url, params=params, headers=headers)
         if response:
             data = response.json()
-            contragent = data['contragent']
-            number = data['number']
-            nomenclature = data['nomenclature']
-            await message.answer(f"contragent: {contragent}\nNomer: {number}\nNomenclature: {nomenclature}")
-            await state.finish()
+            if 'contragent' in data:
+                contragent = data['contragent']
+                number = data['number']
+                nomenclature = data['nomenclature']
+                await message.answer(f"contragent: {contragent}\nNomer: {number}\nNomenclature: {nomenclature}")
+                await state.finish()
+            else:
+                await state.finish()
+                await message.answer("No information found for this serial number", reply_markup=user_uz)
 
     @dp.message_handler(text = 'Contact us 📞')
     async def admin(message: types.Message):
