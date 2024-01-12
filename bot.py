@@ -18,6 +18,14 @@ telegram_bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
 
 # Your API endpoint URL
 
+api_url = 'http://5.182.26.180:55565/telegram/hs/hl/gd'
+login = 'HILOL'
+password = '0ut0fb0unD'
+
+# Token of tg_Bot
+# API_TOKEN = '6619844226:AAFUabaziFZyL70r3dmcF1eHBU66dA1y4Fo'
+
+API_TOKEN = '6293716593:AAEag5wzWypCJTJa1EzUoRsUO6MVx0ufMNA'
 
 headers = {
             'Authorization': 'Basic SElMT0w6MHV0MGZiMHVuRA==',
@@ -232,33 +240,33 @@ async def uzb(message: types.Message):
                                                 message_id=callback_query.message.message_id,
                                                 reply_markup=None)
 
-    @dp.message_handler(text="Seriya bo'yicha izlash")
-    async def tel4(message: types.Message):
-        await message.answer("Seriya raqamini kiriting:")
-        await Input.sery.set()
+    # @dp.message_handler(text="Seriya bo'yicha izlash")
+    # async def tel4(message: types.Message):
+    #     await message.answer("Seriya raqamini kiriting:")
+    #     await Input.sery.set()
 
-    @dp.message_handler(state=Input.sery)
-    async def act(message: types.Message, state: FSMContext):
-        global sery
-        sery = message.text
-        params = {
-            "type": "search_by_series",
-            "sery": sery,
-            "chat_id": message.from_user.id
-        }
-        response = requests.get(api_url, params=params, headers=headers)
-        if response:
-            data = response.json()
-            print(data)
-            if 'contragent' in data:
-                contragent = data['contragent']
-                number = data['number']
-                nomenclature = data['nomenclature']
-                await message.answer(f"Xaridor: {contragent}\nTelefon_nomeri: {number}\nTovar: {nomenclature}")
-                await state.finish()
-            else:
-                await state.finish()
-                await message.answer("Ushbu seriya raqam bo'yicha ma'lumot topilmadi", reply_markup=user_uz)
+    # @dp.message_handler(state=Input.sery)
+    # async def act(message: types.Message, state: FSMContext):
+    #     global sery
+    #     sery = message.text
+    #     params = {
+    #         "type": "search_by_series",
+    #         "sery": sery,
+    #         "chat_id": message.from_user.id
+    #     }
+    #     response = requests.get(api_url, params=params, headers=headers)
+    #     if response:
+    #         data = response.json()
+    #         print(data)
+    #         if 'contragent' in data:
+    #             contragent = data['contragent']
+    #             number = data['number']
+    #             nomenclature = data['nomenclature']
+    #             await message.answer(f"Xaridor: {contragent}\nTelefon_nomeri: {number}\nTovar: {nomenclature}")
+    #             await state.finish()
+    #         else:
+    #             await state.finish()
+    #             await message.answer("Ushbu seriya raqam bo'yicha ma'lumot topilmadi", reply_markup=user_uz)
 
     @dp.message_handler(text = 'Biz bilan bog’lanish')
     async def admin(message: types.Message):
