@@ -18,8 +18,8 @@ telegram_bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
 
 # Your API endpoint URL
 
-api_url = 'http://5.182.26.180:55565/telegram/hs/hl/gd'
-login = 'HILOL'
+api_url = 'http://localhost:8081/juramix'
+login = 'Maxdecoruz'
 password = '0ut0fb0unD'
 
 # Token of tg_Bot
