@@ -18,15 +18,6 @@ telegram_bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
 
 # Your API endpoint URL
 
-api_url = 'http://localhost:8081/juramix'
-login = 'Maxdecoruz'
-password = '0ut0fb0unD'
-
-# Token of tg_Bot
-# API_TOKEN = '6619844226:AAFUabaziFZyL70r3dmcF1eHBU66dA1y4Fo'
-
-API_TOKEN = '6293716593:AAEag5wzWypCJTJa1EzUoRsUO6MVx0ufMNA'
-
 headers = {
             'Authorization': 'Basic SElMT0w6MHV0MGZiMHVuRA==',
             'Accept-Encoding': 'gzip, deflate, br',
